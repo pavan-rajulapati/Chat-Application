@@ -1,4 +1,4 @@
-# CHAT APP using MERN stack and SOCKET.IO 🤠
+# CHAT APP using MERN stack and SOCKET.IO 
 
 A full-stack real-time chat application built with the MERN stack (MongoDB, Express, React, Node.js) and Socket.IO. It allows users to communicate in real-time with instant message delivery, typing indicators, and a clean, responsive UI.
 
