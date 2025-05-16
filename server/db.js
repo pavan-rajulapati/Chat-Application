@@ -13,7 +13,7 @@ const dbConnect = async () => {
       )
     );
   } catch (error) {
-    console.log(colors.brightRed("\nConnection to link DB failed\n"));
+    console.log(colors.brightRed("\nConnection to link DB failed\n", error));
   }
 };
 

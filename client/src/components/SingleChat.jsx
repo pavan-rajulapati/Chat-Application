@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChatState } from "../context/ChatProvider";
 import {
   Box,
@@ -16,21 +16,26 @@ import Loader from "./Loader";
 import { toast } from "react-toastify";
 import axios from "axios";
 import ScrollableChat from "./ScrollableChat";
-// for socket.io
 import io from "socket.io-client";
-const ENDPOINT = "https://react-chat-vars.herokuapp.com";
-var socket, selectedChatCompare;
+
+const ENDPOINT = "http://localhost:5000";
+let socket;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { user, selectedChat, setSelectedChat, notification, setNotification } =
     ChatState();
+
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState();
+  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [typing, setTyping] = useState();
-  const [isTyping, setIsTyping] = useState();
+  const [typing, setTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
+  // Use useRef to always hold latest selectedChat for event handlers
+  const selectedChatCompare = useRef();
+
+  // Fetch messages
   const fetchAllMessages = async () => {
     if (!selectedChat) return;
     try {
@@ -48,14 +53,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
     } catch (err) {
-      toast.error(err);
+      toast.error("Failed to load messages");
       setLoading(false);
-      return;
     }
   };
 
+  // Send message
   const sendMessage = async (e) => {
-    if (e.key === "Enter" && newMessage) {
+    if (e.key === "Enter" && newMessage.trim()) {
       socket.emit("stop typing", selectedChat._id);
       try {
         const config = {
@@ -64,7 +69,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             Authorization: `Bearer ${user.token}`,
           },
         };
-        setNewMessage("");
         const { data } = await axios.post(
           "/api/message",
           {
@@ -73,11 +77,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           },
           config
         );
+        setNewMessage("");
+        setMessages((prevMessages) => [...prevMessages, data]); // add message immediately
         socket.emit("new message", data);
-        setMessages([...messages, data]);
       } catch (err) {
-        toast.error(err);
-        return;
+        toast.error("Failed to send message");
       }
     }
   };
@@ -99,7 +103,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         config
       );
     } catch (err) {
-      toast.error(err);
+      toast.error("Notification error");
     }
   };
 
@@ -109,44 +113,66 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket.on("connected", () => setSocketConnected(true));
     socket.on("typing", () => setIsTyping(true));
     socket.on("stop typing", () => setIsTyping(false));
-  }, []);
+
+    // Cleanup on component unmount
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   useEffect(() => {
+    selectedChatCompare.current = selectedChat;
     fetchAllMessages();
-    selectedChatCompare = selectedChat;
   }, [selectedChat]);
 
-  console.log(notification);
   useEffect(() => {
-    socket.on("message received", (newMessageReceived) => {
+    const handler = (newMessageReceived) => {
+      // If message is NOT for current chat, add notification
       if (
-        !selectedChatCompare ||
-        selectedChatCompare._id !== newMessageReceived.chatId._id
+        !selectedChatCompare.current ||
+        selectedChatCompare.current._id !== newMessageReceived.chatId._id
       ) {
-        if (!notification.includes()) {
+        if (!notification.find((n) => n._id === newMessageReceived._id)) {
           setNotification([newMessageReceived, ...notification]);
           setFetchAgain(!fetchAgain);
         }
       } else {
-        setMessages([...messages, newMessageReceived]);
+        // Only add message if sender is NOT current user
+        if (
+          String(newMessageReceived.sender._id) !==
+          String(user.user._id)
+        ) {
+          setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
+        }
       }
-    });
-  });
+    };
+
+    socket.on("message received", handler);
+
+    return () => {
+      socket.off("message received", handler);
+    };
+  }, [notification, fetchAgain, setFetchAgain, user.user._id]);
+
   useEffect(() => {
     saveNotification();
   }, [notification]);
+
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
     if (!socketConnected) return;
+
     if (!typing) {
       setTyping(true);
       socket.emit("typing", selectedChat._id);
     }
-    let lastTypingTime = new Date().getTime();
-    var timerLength = 3000;
+
+    const lastTypingTime = new Date().getTime();
+    const timerLength = 3000;
+
     setTimeout(() => {
-      var timeNow = new Date().getTime();
-      var timeDiff = timeNow - lastTypingTime;
+      const timeNow = new Date().getTime();
+      const timeDiff = timeNow - lastTypingTime;
       if (timeDiff >= timerLength && typing) {
         socket.emit("stop typing", selectedChat._id);
         setTyping(false);
@@ -159,39 +185,39 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       {selectedChat ? (
         <>
           <Box
-            py="3.0"
+            py="3"
             px="4"
             w="100%"
-            d="flex"
-            justifyContent={{ base: "space-between" }}
+            display="flex"
+            justifyContent="space-between"
             alignItems="center"
             bg="#fff"
             borderRadius="lg"
           >
             <Box
-              d={{ base: "flex", md: "none" }}
+              display={{ base: "flex", md: "none" }}
               mr="5"
               onClick={() => setSelectedChat("")}
+              cursor="pointer"
             >
               <IoIosArrowBack />
             </Box>
+
             {!selectedChat.isGroupChat ? (
               <Text
-                width="100%"
-                d="flex"
+                display="flex"
                 py="3"
                 alignItems="center"
-                justifyContent={{ base: "space-between" }}
+                justifyContent="space-between"
                 fontSize={{ base: "1.5rem", md: "1.75rem" }}
+                w="100%"
               >
                 <Box display="flex" flexDir="column" alignItems="flex-start">
                   {getSender(user.user, selectedChat.users).name}
-
                   <Box minH="10px">
-                    {isTyping && <Text fontSize="8px">Typing...</Text>}
+                    {isTyping && <Text fontSize="sm">Typing...</Text>}
                   </Box>
                 </Box>
-
                 <ProfileModel user={getSender(user.user, selectedChat.users)} />
               </Text>
             ) : (
@@ -205,8 +231,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </>
             )}
           </Box>
+
           <Box
-            d="flex"
+            display="flex"
             flexDir="column"
             p="3"
             w="100%"
@@ -217,14 +244,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               <Loader />
             ) : (
               <div className="message">
-                {<ScrollableChat messages={messages} />}
+                <ScrollableChat messages={messages} />
               </div>
             )}
           </Box>
+
           <FormControl
             onKeyDown={sendMessage}
             isRequired
-            mt={{ base: "1", md: "3" }}
+            mt="3"
             border="1px solid #fff"
             borderRadius="8px"
           >
@@ -241,7 +269,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         </>
       ) : (
         <Box
-          d="flex"
+          display="flex"
           alignItems="center"
           justifyContent="center"
           h="100%"
@@ -249,11 +277,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           color="rgba(255, 255, 255, 0.685)"
         >
           <Heading size="4xl" mb="4">
-            De-Link
+            NexChat
           </Heading>
           <Divider />
           <Text fontSize="3xl" px="3">
-            Select on a user to start chat
+            Select a user to start chat
           </Text>
         </Box>
       )}

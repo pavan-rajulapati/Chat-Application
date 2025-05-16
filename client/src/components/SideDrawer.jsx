@@ -128,7 +128,7 @@ const SideDrawer = () => {
         justifyContent="space-between"
         alignItems="center"
         w="100%"
-        p="10px 15px"
+        p="4px 15px"
         backdropFilter="blur(5px)"
       >
         <Tooltip label="Search to Connect" hasArrow placement="bottom-end">
@@ -146,7 +146,7 @@ const SideDrawer = () => {
           className="brand"
           color="rgba(255, 255, 255, 0.685)"
         >
-          De-Link
+          Nexchat
         </Text>
         <div style={{ display: "flex" }}>
           <Menu>

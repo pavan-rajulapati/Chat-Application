@@ -45,7 +45,7 @@ const Homepage = () => {
             bg="#fff"
             mt="2em"
           >
-            <Text fontSize="4xl">De-Link</Text>
+            <Text fontSize="4xl">NexChat</Text>
           </Box>
           <Box w="100%" p="4" mt="20px">
             <Tabs isFitted variant="enclosed">
