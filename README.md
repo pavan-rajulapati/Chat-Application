@@ -1,28 +1,28 @@
-## CHAT APP using MERN stack and SOCKET.IO 🤠
+# CHAT APP using MERN stack and SOCKET.IO 🤠
 
-### Features
+A full-stack real-time chat application built with the MERN stack (MongoDB, Express, React, Node.js) and Socket.IO. It allows users to communicate in real-time with instant message delivery, typing indicators, and a clean, responsive UI.
 
-💬 Real-time 1-to-1 messaging with Socket.IO
+## 🚀 Features
 
-✅ User authentication with JWT
+- 💬 Real-time 1-to-1 messaging with Socket.IO
 
-🧑‍🤝‍🧑 Online/offline status indicators
+- ✅ User authentication with JWT
 
-✍️ Typing notifications
+- 🧑‍🤝‍🧑 Online/offline status indicators
 
-🗂️ MongoDB for storing users and chat history
+- ✍️ Typing notifications
 
-📱 Fully responsive (mobile + desktop)
+- 🗂️ MongoDB for storing users and chat history
 
-🔒 Secure password handling with bcrypt
+- 📱 Fully responsive (mobile + desktop)
 
-📦 Scalable backend with Express.js & Node.js
+- 🔒 Secure password handling with bcrypt
+
+- 📦 Scalable backend with Express.js & Node.js
 
 ---
 
-**Version 1.0.0**
-
-Code and documents to create real-time chat application using the following stack
+## 🛠️ Tech Stack
 
 - MongoDB (Database)
 - ExpressJS (Web application framework)
@@ -31,3 +31,27 @@ Code and documents to create real-time chat application using the following stac
 - Socket.io (web sockets for real time chat)
 
 ---
+
+## ⚙️ Setup
+
+### Backend .env file 
+- PORT=5000
+- MONGO_URI=your_mongodb_uri
+- SECRET_KEY=your_secret
+- NODE_ENV=development
+- CLIENT_URL=http://localhost:3000
+
+### Backend
+```bash
+cd server
+npm install
+npm start
+```
+
+### Frontned
+```bash
+cd client
+npm install
+npm start
+```
+
